@@ -80,10 +80,28 @@ const INTERCEPT = `(function () {
   } catch (e) {}
 })();`;
 
-function rewriteHtml(html, finalUrl) {
+export function proxyBase(appOrigin) {
+  return appOrigin ? `${appOrigin}/api/proxy?url=` : '/api/proxy?url=';
+}
+
+export function rewriteHtml(html, finalUrl, appOrigin) {
   const site = new URL(finalUrl).origin;
-  const script = `<script>${INTERCEPT.replace('%SITE%', JSON.stringify(site)).replace('%PROXY%', JSON.stringify('/api/proxy?url='))}</script>`;
+  const PROXY = proxyBase(appOrigin);
+  const script = `<script>${INTERCEPT.replace('%SITE%', JSON.stringify(site)).replace('%PROXY%', JSON.stringify(PROXY))}</script>`;
   const base = `<base href="${finalUrl.split('#')[0]}">`;
+  // route stylesheets through the proxy so their fonts/images are not CORS-blocked
+  html = html.replace(/<link\b[^>]*>/gi, (tag) => {
+    if (!/rel\s*=\s*["']?stylesheet/i.test(tag)) return tag;
+    return tag.replace(/\bhref\s*=\s*(["'])([^"']+)\1/i, (m, q, href) => {
+      let abs = href;
+      try {
+        abs = new URL(href, finalUrl).toString();
+      } catch {
+        return m;
+      }
+      return `href=${q}${PROXY}${encodeURIComponent(abs)}${q}`;
+    });
+  });
   const headMatch = /<head([^>]*)>/i.exec(html);
   if (headMatch) {
     const idx = headMatch.index + headMatch[0].length;
@@ -97,11 +115,42 @@ function rewriteHtml(html, finalUrl) {
   return base + script + html;
 }
 
+// Rewrite url(...)/@import references in stylesheets to go through the proxy
+// (avoids cross-origin font/CORS failures inside the webview).
+const CSS_URL_RE = /(url\s*\(\s*)(["']?)([^"')]+)\2(\s*\))/gi;
+const CSS_IMPORT_RE = /(@import\s+)(["'])([^"']+)\2/gi;
+
+export function rewriteCss(css, cssUrl, appOrigin) {
+  const PROXY = proxyBase(appOrigin);
+  const toProxy = (ref) => {
+    const trimmed = ref.trim();
+    if (!trimmed || /^(data:|#|about:|blob:)/i.test(trimmed)) return null;
+    if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(trimmed)) {
+      if (!/^https?:/i.test(trimmed)) return null;
+      return `${PROXY}${encodeURIComponent(trimmed)}`;
+    }
+    try {
+      return `${PROXY}${encodeURIComponent(new URL(trimmed, cssUrl).toString())}`;
+    } catch {
+      return null;
+    }
+  };
+  return css
+    .replace(CSS_URL_RE, (m, pre, q, ref, post) => {
+      const p = toProxy(ref);
+      return p ? `${pre}${q}${p}${q}${post}` : m;
+    })
+    .replace(CSS_IMPORT_RE, (m, pre, q, ref) => {
+      const p = toProxy(ref);
+      return p ? `${pre}${q}${p}${q}` : m;
+    });
+}
+
 /**
  * Fetch a page through the session and return { status, headers, body (Buffer|ReadableStream) }.
  * HTML pages get rewritten; other content is passed through.
  */
-export async function proxyFetch(session, url, { method = 'GET', body = null, headers = {} } = {}) {
+export async function proxyFetch(session, url, { method = 'GET', body = null, headers = {} } = {}, appOrigin = '') {
   if (!isHttpUrl(url)) {
     const e = new Error('仅支持 http/https 地址');
     e.status = 400;
@@ -128,20 +177,33 @@ export async function proxyFetch(session, url, { method = 'GET', body = null, he
         status: response.status,
         headers: {
           'Content-Type': 'text/html; charset=utf-8',
-          'Content-Length': String(Buffer.byteLength(rewriteHtml(text, finalUrl))),
+          'Content-Length': String(Buffer.byteLength(rewriteHtml(text, finalUrl, appOrigin))),
         },
-        body: Buffer.from(rewriteHtml(text, finalUrl), 'utf8'),
+        body: Buffer.from(rewriteHtml(text, finalUrl, appOrigin), 'utf8'),
         finalUrl,
       };
     }
   }
   if (contentType.includes('text/html')) {
     const { text } = await readText(response, finalUrl);
-    const out = rewriteHtml(text || '', finalUrl);
+    const out = rewriteHtml(text || '', finalUrl, appOrigin);
     return {
       status: response.status,
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
+        'Content-Length': String(Buffer.byteLength(out, 'utf8')),
+      },
+      body: Buffer.from(out, 'utf8'),
+      finalUrl,
+    };
+  }
+  if (contentType.includes('text/css')) {
+    const { text } = await readText(response, finalUrl);
+    const out = rewriteCss(text || '', finalUrl, appOrigin);
+    return {
+      status: response.status,
+      headers: {
+        'Content-Type': 'text/css; charset=utf-8',
         'Content-Length': String(Buffer.byteLength(out, 'utf8')),
       },
       body: Buffer.from(out, 'utf8'),

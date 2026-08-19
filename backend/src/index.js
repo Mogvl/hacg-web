@@ -190,7 +190,7 @@ app.use('/api/proxy', express.raw({ type: '*/*', limit: '20mb' }), (req, res, ne
     }
     const qs = extra.toString();
     if (qs) finalTarget += (finalTarget.includes('?') ? '&' : '?') + qs;
-    proxyFetch(req.session, finalTarget, { method: 'GET' })
+proxyFetch(req.session, finalTarget, { method: 'GET' }, appOrigin(req))
       .then(({ status, headers, body }) => {
         res.status(status);
         for (const [k, v] of Object.entries(headers)) res.setHeader(k, v);
@@ -210,7 +210,7 @@ app.use('/api/proxy', express.raw({ type: '*/*', limit: '20mb' }), (req, res, ne
       method: 'POST',
       body: req.body && req.body.length ? req.body : undefined,
       headers: { 'Content-Type': contentType },
-    })
+    }, appOrigin(req))
       .then(({ status, headers, body }) => {
         res.status(status);
         for (const [k, v] of Object.entries(headers)) res.setHeader(k, v);
@@ -231,6 +231,13 @@ app.get('/api/image', wrap(async (req, res) => {
   for (const [k, v] of Object.entries(headers)) res.setHeader(k, v);
   Readable.fromWeb(body).pipe(res);
 }));
+
+/** origin of the web app (iframe host) — used to build absolute proxy urls */
+function appOrigin(req) {
+  const proto = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+  const host = req.headers.host || 'localhost:8200';
+  return `${proto}://${host}`;
+}
 
 app.get('/api/health', (req, res) => {
   res.json({ ok: true, name: 'hacg-web-backend', version: APP_VERSION });
