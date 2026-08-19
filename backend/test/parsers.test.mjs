@@ -22,6 +22,7 @@ test('parseArticleList: home page', () => {
   assert.equal(r.title, '琉璃神社 ★ HACG.me');
   assert.ok(r.articles.length >= 10, 'has articles');
   assert.equal(r.next, 'https://www.hacg.icu/wp/page/2');
+  assert.equal(r.prev, null, 'home page has no prev');
 
   const a = r.articles.find((x) => x.id === 102867);
   assert.ok(a, 'found post-102867');

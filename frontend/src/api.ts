@@ -98,6 +98,7 @@ export interface ArticlePage {
   title: string;
   articles: Article[];
   next: string | null;
+  prev: string | null;
 }
 
 export function getArticles(url: string) {

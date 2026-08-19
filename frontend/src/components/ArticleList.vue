@@ -1,6 +1,7 @@
 <script setup lang="ts">
-// ArticleFragment parity: paging list, pull-to-refresh, infinite scroll,
-// footer load states, black-cat error retry, per-item slide-in animation.
+// ArticleFragment parity + 原站翻页: paging list, pull-to-refresh, infinite scroll,
+// footer load states, black-cat error retry, per-item slide-in animation,
+// 底部翻页条(« 上一页 / 下一页 » — 对齐 hacg.me previouspostslink/nextpostslink)。
 import { computed, onMounted, ref, watch } from 'vue';
 import { IconCat } from '@tabler/icons-vue';
 import type { Article } from '../api';
@@ -11,12 +12,25 @@ import ArticleCard from './ArticleCard.vue';
 const props = defineProps<{ url: string }>();
 const emit = defineEmits<{ (e: 'title', t: string): void }>();
 
+interface PageState {
+  url: string;
+  next: string | null;
+  prev: string | null;
+}
+
+// 分页历史栈 (原站翻页语义: 上一页/下一页 替换列表)
+const pages = ref<PageState[]>([{ url: props.url, next: null, prev: null }]);
+const pageIdx = ref(0);
+
 const items = ref<Article[]>([]);
-const next = ref<string | null>(null);
 const status = ref<'idle' | 'loading' | 'error' | 'complete'>('idle');
 const retryFlag = ref(false);
 const toasting = ref(false);
 const refreshing = ref(false);
+
+const current = computed(() => pages.value[pageIdx.value]);
+const canPrev = computed(() => pageIdx.value > 0);
+const canNext = computed(() => !!current.value?.next);
 
 const loading = computed(() => status.value === 'loading');
 const error = computed(() => status.value === 'error');
@@ -32,22 +46,31 @@ const footer = computed(() => {
 
 let querySeq = 0;
 
+// 加载 pages[pageIdx].url; refresh=true 清空列表(翻页/下拉刷新)
 async function query(refresh = false) {
   if (status.value === 'loading') return;
   if (refresh) {
     items.value = [];
-    next.value = null;
     status.value = 'loading';
   } else {
     status.value = 'loading';
   }
   const seq = ++querySeq;
+  const target = current.value.url;
   try {
-    const page = await getArticles(refresh ? props.url : (next.value || props.url));
+    const page = await getArticles(refresh ? target : (current.value.next || target));
     if (seq !== querySeq) return;
     if (page.title) emit('title', page.title);
-    items.value = [...items.value, ...page.articles];
-    next.value = page.next;
+    if (refresh) {
+      items.value = page.articles;
+      // 更新当前页的 next/prev (下一跳)
+      const cur = current.value;
+      cur.next = page.next;
+      if (page.prev) cur.prev = page.prev;
+    } else {
+      items.value = [...items.value, ...page.articles];
+      current.value.next = page.next; // 推进当前页的下一页
+    }
     status.value = page.next ? 'idle' : 'complete';
     if (refresh && page.articles.length) listEl.value?.scrollTo({ top: 0 });
     return page.articles.length;
@@ -72,7 +95,27 @@ function retry() {
 }
 
 function loadMore() {
-  if (status.value === 'idle' && next.value) query(false);
+  if (status.value === 'idle' && current.value.next) query(false);
+}
+
+// 原站翻页: 下一页 = 前进一页并替换列表; 上一页 = 回到历史页
+function goNext() {
+  if (!canNext.value || status.value === 'loading') return;
+  const cur = current.value;
+  if (!cur.next) return;
+  if (pageIdx.value + 1 >= pages.value.length) {
+    pages.value.push({ url: cur.next, next: null, prev: cur.url });
+  }
+  pageIdx.value++;
+  retryFlag.value = false;
+  query(true);
+}
+
+function goPrev() {
+  if (!canPrev.value || status.value === 'loading') return;
+  pageIdx.value--;
+  retryFlag.value = false;
+  query(true);
 }
 
 const listEl = ref<HTMLElement | null>(null);
@@ -120,6 +163,8 @@ watch(
   () => props.url,
   () => {
     retryFlag.value = false;
+    pages.value = [{ url: props.url, next: null, prev: null }];
+    pageIdx.value = 0;
     query(true);
   },
   { immediate: true }
@@ -168,6 +213,12 @@ onMounted(() => {
     >
       <span v-if="loading && items.length" class="spin"></span>
       {{ footer.text }}
+    </div>
+
+    <!-- 原站翻页: « 上一页 / 下一页 » -->
+    <div v-if="items.length > 0" class="page-nav">
+      <button class="pg-btn" :disabled="!canPrev" @click="goPrev">« 上一页</button>
+      <button class="pg-btn" :disabled="!canNext || loading" @click="goNext">下一页 »</button>
     </div>
   </div>
 </template>

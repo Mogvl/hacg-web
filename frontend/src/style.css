@@ -540,6 +540,40 @@ a {
   letter-spacing: 0.04em;
 }
 
+/* 原站翻页条: « 上一页 / 下一页 » */
+.page-nav {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 6px 12px 26px;
+}
+.pg-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 9px 22px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #5d5278;
+  background: var(--glass-strong);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  box-shadow: var(--shadow), var(--hairline);
+  cursor: pointer;
+  transition: transform 0.2s var(--ease), opacity 0.2s var(--ease), background 0.25s var(--ease);
+}
+.pg-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(238, 215, 245, 0.95), rgba(207, 189, 242, 0.95));
+  transform: translateY(-1px);
+}
+.pg-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+.pg-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
 /* 下拉刷新 */
 .ptr {
   display: none;

@@ -82,7 +82,19 @@ export function parseArticleList(html, baseUrl) {
     ) ||
     absAttr($('#nav-below .nav-previous a').first().attr('href'), baseUrl) ||
     null;
-  return { title, articles, next };
+  // 上一页 (原站 previouspostslink «)
+  const prev =
+    absAttr(
+      $('a.previouspostslink').last().filter((_, a) => jtext($(a)) === '«').attr('href'),
+      baseUrl
+    ) ||
+    absAttr(
+      $('#wp_page_numbers a').last().filter((_, a) => jtext($(a)) === '<').attr('href'),
+      baseUrl
+    ) ||
+    absAttr($('#nav-below .nav-next a').first().attr('href'), baseUrl) ||
+    null;
+  return { title, articles, next, prev };
 }
 
 // ---------- jsoup Safelist parity (Safelist.basicWithImages() + audio/video/source) ----------
