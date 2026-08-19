@@ -30,7 +30,7 @@ const showContent = computed(() => !!props.article.content);
 
 const metaText = computed(() => {
   const a = props.article;
-  return `发表于${formatListTime(a.time)}由${a.author?.name || ''}|${a.comments}条回复`;
+  return `发表于${formatListTime(a.time)}由${a.author?.name || ''}`;
 });
 
 const imgState = ref<'loading' | 'loaded' | 'error'>('loading');

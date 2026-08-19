@@ -548,24 +548,11 @@ a {
   flex-direction: column;
   position: relative;
 }
-.pager {
+.detail-scroll {
   flex: 1;
   min-height: 0;
-  display: flex;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scroll-behavior: smooth;
-  border-radius: var(--r-panel);
-}
-.pager > .page {
-  flex: 0 0 100%;
-  min-width: 0;
-  scroll-snap-align: start;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-}
-.pager.dragging {
-  scroll-behavior: auto;
 }
 
 .article-content {
@@ -711,130 +698,6 @@ a {
   border: none;
   cursor: default;
   z-index: -1;
-}
-
-/* ---------------- 评论 ---------------- */
-.comment-list {
-  padding: 8px 12px 110px;
-  max-width: 760px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.cmt-card {
-  position: relative;
-  background: var(--glass);
-  border-radius: var(--r-card);
-  padding: 16px 16px 14px 20px;
-  cursor: pointer;
-  box-shadow: var(--shadow), var(--hairline);
-  transition: transform 0.3s var(--ease);
-}
-.cmt-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: var(--grad-pearl);
-  pointer-events: none;
-  opacity: 0.6;
-}
-.cmt-card:hover {
-  transform: translateY(-2px);
-}
-.cmt-bar {
-  position: absolute;
-  left: 9px;
-  top: 18px;
-  bottom: 18px;
-  width: 3px;
-  border-radius: 3px;
-  background: linear-gradient(180deg, var(--rose), var(--lav));
-  opacity: 0.85;
-}
-.cmt-head {
-  position: relative;
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-.cmt-avatar {
-  width: 46px;
-  height: 46px;
-  border-radius: 15px;
-  object-fit: cover;
-  background: linear-gradient(160deg, rgba(214, 200, 235, 0.55), rgba(236, 214, 229, 0.55));
-  box-shadow: var(--hairline);
-  flex: none;
-}
-.cmt-user {
-  font-size: 14.5px;
-  font-weight: 600;
-  color: var(--ink);
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.cmt-time {
-  font-size: 11.5px;
-  color: var(--ink-3);
-  margin-top: 3px;
-}
-.cmt-vote {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  flex: none;
-}
-.cmt-vote .vbtn {
-  width: 26px;
-  height: 26px;
-  border: none;
-  border-radius: 50%;
-  background: none;
-  cursor: pointer;
-  padding: 0;
-  color: var(--ink-3);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.25s var(--ease), color 0.25s var(--ease);
-}
-.cmt-vote .vbtn:hover {
-  background: rgba(255, 255, 255, 0.7);
-  color: var(--lav-deep);
-}
-.cmt-vote .vbtn svg {
-  width: 17px;
-  height: 17px;
-  stroke-width: 1.6;
-}
-.cmt-score {
-  min-width: 26px;
-  text-align: center;
-  font-size: 12px;
-  color: var(--ink-2);
-  font-variant-numeric: tabular-nums;
-}
-.cmt-text {
-  position: relative;
-  margin: 10px 0 2px;
-  font-size: 13.5px;
-  color: var(--ink-2);
-  line-height: 1.65;
-  word-break: break-word;
-  white-space: pre-wrap;
-}
-.cmt-children {
-  position: relative;
-  margin-left: 14px;
-  margin-top: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
 }
 
 /* ---------------- 对话框 — 圆角玻璃面板 ---------------- */
@@ -1087,26 +950,6 @@ a {
   border-radius: 3px;
   background: linear-gradient(90deg, var(--rose), var(--lav));
   transition: width 0.2s var(--ease);
-}
-
-/* ---------------- 分页指示点 ---------------- */
-.dots {
-  display: flex;
-  justify-content: center;
-  gap: 7px;
-  padding: 6px 0;
-}
-.dots .dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: rgba(195, 174, 233, 0.4);
-}
-.dots .dot.on {
-  background: var(--lav-deep);
-  width: 18px;
-  border-radius: 4px;
-  transition: width 0.3s var(--ease);
 }
 
 /* ---------------- toast — 玻璃 pill ---------------- */

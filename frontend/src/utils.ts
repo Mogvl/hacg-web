@@ -102,9 +102,6 @@ export function magnetDisplay(m: string): string {
 // ---------- storage (SharedPreferences parity) ----------
 
 const SEARCH_HISTORY_KEY = 'hacg.search.history';
-const CFG_AUTHOR = 'config.author';
-const CFG_EMAIL = 'config.email';
-const CFG_COMMENT = 'config.comment';
 
 export function searchHistory(): string[] {
   try {
@@ -122,20 +119,6 @@ export function saveSearchHistory(q: string) {
 
 export function clearSearchHistory() {
   localStorage.removeItem(SEARCH_HISTORY_KEY);
-}
-
-export function commentPrefs() {
-  return {
-    author: localStorage.getItem(CFG_AUTHOR) || '',
-    email: localStorage.getItem(CFG_EMAIL) || '',
-    comment: localStorage.getItem(CFG_COMMENT) || '',
-  };
-}
-
-export function saveCommentPrefs(p: { author?: string; email?: string; comment?: string }) {
-  if (p.author !== undefined) localStorage.setItem(CFG_AUTHOR, p.author);
-  if (p.email !== undefined) localStorage.setItem(CFG_EMAIL, p.email);
-  if (p.comment !== undefined) localStorage.setItem(CFG_COMMENT, p.comment);
 }
 
 // ---------- url classification (Common.kt isWordpress / getIdFromUrl / isList) ----------

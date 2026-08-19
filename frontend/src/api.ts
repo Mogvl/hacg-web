@@ -43,19 +43,6 @@ export interface Article {
   tags: Tag[];
 }
 
-export interface Comment {
-  id: number;
-  parent: number;
-  content: string;
-  user: string;
-  face: string;
-  moderation: number;
-  time: string;
-  children: Comment[];
-  depth: number;
-  uniqueId: string;
-}
-
 export interface AppState {
   version: string;
   host: string;
@@ -125,46 +112,6 @@ export interface ArticleDetail {
 
 export function getArticle(url: string) {
   return request<ArticleDetail>(`/api/article?url=${encodeURIComponent(url)}`);
-}
-
-export type Sorting = 'by_vote' | 'newest' | 'oldest';
-
-export interface CommentPage {
-  list: Comment[];
-  next: { lastParentId: number; offset: number } | null;
-}
-
-export function loadComments(payload: {
-  postId: number;
-  sorting: Sorting;
-  offset: number;
-  lastParentId: number;
-}) {
-  return request<CommentPage>('/api/comments/load', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
-}
-
-export function voteComment(payload: { commentId: number; voteType: number; postId: number }) {
-  return request<{ votes: number }>('/api/comments/vote', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
-}
-
-export function addComment(payload: {
-  postId: number;
-  author?: string;
-  email?: string;
-  content: string;
-  wpdiscuzUniqueId?: string;
-  depth?: number;
-}) {
-  return request<{ comment: Comment }>('/api/comments/add', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
 }
 
 export function getUser() {

@@ -1,18 +1,8 @@
 <script setup lang="ts">
-// InfoActivity parity: content webview page + comments page (swipeable pager),
-// FAB actions (browser / comments / share / magnets), image save dialog.
+// InfoActivity parity (无评论/点赞): 单页文章内容 + FAB(浏览器/分享/磁力) + 存图对话框。
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import {
-  IconCat,
-  IconChevronLeft,
-  IconMagnet,
-  IconMessageCircle,
-  IconPlus,
-  IconShare,
-  IconWorld,
-  IconX,
-} from '@tabler/icons-vue';
+import { IconCat, IconChevronLeft } from '@tabler/icons-vue';
 import type { Article } from '../api';
 import { getArticle, imageProxyUrl } from '../api';
 import { state } from '../store';
@@ -25,7 +15,6 @@ import {
   magnetOpenLink,
   toast,
 } from '../utils';
-import CommentPanel from '../components/CommentPanel.vue';
 import FabMenu, { type FabItem } from '../components/FabMenu.vue';
 
 const route = useRoute();
@@ -36,16 +25,9 @@ const contentHtml = ref('');
 const magnets = ref<string[]>([]);
 const progress = ref(false);
 const error = ref(false);
-const page = ref(0); // 0 = content, 1 = comments
-const pagerEl = ref<HTMLElement | null>(null);
+const contentEl = ref<HTMLElement | null>(null);
 
 const articleUrl = computed(() => String(route.query.url || ''));
-const articleId = computed(() => {
-  const p = Number(route.params.id);
-  if (p) return p;
-  const m = /\/wp\/(\d+)\.html/.exec(articleUrl.value);
-  return m ? Number(m[1]) : 0;
-});
 
 const titleText = computed(() => article.value?.title || '琉璃神社');
 
@@ -53,7 +35,6 @@ const fabItems = computed<FabItem[]>(() => [
   { id: 'magnet', icon: 'magnet', label: '链接', show: magnets.value.length > 0 },
   { id: 'browser', icon: 'world', label: '使用浏览器打开' },
   { id: 'share', icon: 'share', label: '分享' },
-  { id: 'comments', icon: 'comments', label: '评论' },
 ]);
 
 // ---------- load ----------
@@ -69,7 +50,7 @@ async function query() {
     progress.value = false;
     await nextTick();
     setupLazy();
-  } catch (e: any) {
+  } catch {
     progress.value = false;
     error.value = true;
   }
@@ -77,12 +58,11 @@ async function query() {
 
 // ---------- lazy images (jquery.lazyload parity) ----------
 let io: IntersectionObserver | null = null;
-let contentEl: HTMLElement | null = null;
 
 function setupLazy() {
   io?.disconnect();
-  if (!contentEl) return;
-  const imgs = contentEl.querySelectorAll('img.lazy[data-original]');
+  if (!contentEl.value) return;
+  const imgs = contentEl.value.querySelectorAll('img.lazy[data-original]');
   io = new IntersectionObserver(
     (entries) => {
       for (const e of entries) {
@@ -150,9 +130,6 @@ function onFab(id: string) {
     case 'browser':
       window.open(articleUrl.value, '_blank');
       break;
-    case 'comments':
-      setPage(1);
-      break;
     case 'share':
       share(articleUrl.value);
       break;
@@ -171,10 +148,6 @@ function onFab(id: string) {
 const magnetClicks = ref(0);
 const magnetDialog = ref(false);
 const magnetIndex = ref(0);
-
-function magnetLabel(m: string): string {
-  return magnetDisplay(m);
-}
 
 function openMagnet() {
   const m = magnets.value[magnetIndex.value];
@@ -255,44 +228,15 @@ async function saveImage() {
   saveDialog.value = false;
 }
 
-// ---------- pager ----------
-function setPage(p: number) {
-  page.value = p;
-  const el = pagerEl.value;
-  if (el) el.scrollTo({ left: p * el.clientWidth, behavior: 'smooth' });
-}
-
-function onPagerScroll() {
-  const el = pagerEl.value;
-  if (!el) return;
-  const p = Math.round(el.scrollLeft / el.clientWidth);
-  if (p !== page.value) page.value = p;
-}
-
 function back() {
-  if (page.value > 0) {
-    setPage(0);
-  } else {
-    router.back();
-  }
-}
-
-// Android back parity: comments tab → content tab on back gesture
-function onPopState() {
-  if (page.value > 0) {
-    setPage(0);
-    history.pushState({ hacgTab: 1 }, '');
-  }
+  router.back();
 }
 
 onMounted(() => {
   query();
-  window.addEventListener('popstate', onPopState);
 });
-
 onBeforeUnmount(() => {
   io?.disconnect();
-  window.removeEventListener('popstate', onPopState);
 });
 </script>
 
@@ -303,40 +247,28 @@ onBeforeUnmount(() => {
       <h1>{{ titleText }}</h1>
     </header>
 
-    <div ref="pagerEl" class="pager" @scroll.passive="onPagerScroll">
-      <!-- page 0: article content (fragment_info_web) -->
-      <div class="page" style="position: relative">
-        <div v-if="progress" class="article-content" style="padding-top: 24px">
-          <div class="skeleton-card" style="padding-top: 4px">
-            <div class="sk-line" style="height: 22px; width: 74%"></div>
-            <div class="sk-block sk-shimmer" style="min-height: 140px; margin: 16px 16px 0"></div>
-            <div class="sk-line sk-shimmer"></div>
-            <div class="sk-line short sk-shimmer"></div>
-            <div class="sk-line sk-shimmer"></div>
-            <div class="sk-line short sk-shimmer"></div>
-          </div>
+    <div ref="contentEl" class="detail-scroll">
+      <div v-if="progress" class="article-content" style="padding-top: 24px">
+        <div class="skeleton-card" style="padding-top: 4px">
+          <div class="sk-line" style="height: 22px; width: 74%"></div>
+          <div class="sk-block sk-shimmer" style="min-height: 140px; margin: 16px 16px 0"></div>
+          <div class="sk-line sk-shimmer"></div>
+          <div class="sk-line short sk-shimmer"></div>
+          <div class="sk-line sk-shimmer"></div>
+          <div class="sk-line short sk-shimmer"></div>
         </div>
-        <div v-else-if="error" class="error-cat" @click="query()">
-          <IconCat size="34" stroke="1.2" />
-          <span>加载失败，点击重试</span>
-        </div>
-        <div
-          v-else
-          ref="contentEl"
-          class="article-content"
-          @click="onContentClick"
-        >
-          <h1>{{ article?.title }}</h1>
-          <div v-html="contentHtml"></div>
-        </div>
-        <FabMenu :items="fabItems" @select="onFab" />
       </div>
-
-      <!-- page 1: comments (InfoCommentFragment) -->
-      <div class="page">
-        <CommentPanel v-if="articleId" :post-id="articleId" />
+      <div v-else-if="error" class="error-cat" @click="query()">
+        <IconCat size="34" stroke="1.2" />
+        <span>加载失败，点击重试</span>
+      </div>
+      <div v-else class="article-content" @click="onContentClick">
+        <h1>{{ article?.title }}</h1>
+        <div v-html="contentHtml"></div>
       </div>
     </div>
+
+    <FabMenu :items="fabItems" @select="onFab" />
 
     <!-- magnet dialog -->
     <div v-if="magnetDialog" class="dlg-backdrop" @click.self="magnetDialog = false">
@@ -345,7 +277,7 @@ onBeforeUnmount(() => {
         <div class="dlg-list">
           <label v-for="(m, i) in magnets" :key="i">
             <input type="radio" :checked="i === magnetIndex" @change="magnetIndex = i" />
-            <span style="word-break: break-all">{{ magnetLabel(m) }}</span>
+            <span style="word-break: break-all">{{ magnetDisplay(m) }}</span>
           </label>
         </div>
         <div class="dlg-actions">

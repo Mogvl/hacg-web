@@ -1,14 +1,7 @@
 <script setup lang="ts">
 // FloatingActionMenu parity: chrysanthemum FAB with mini actions + labels.
 import { ref } from 'vue';
-import {
-  IconMagnet,
-  IconMessageCircle,
-  IconPlus,
-  IconShare,
-  IconWorld,
-  IconX,
-} from '@tabler/icons-vue';
+import { IconMagnet, IconPlus, IconShare, IconWorld, IconX } from '@tabler/icons-vue';
 
 export interface FabItem {
   id: string;
@@ -24,7 +17,6 @@ const ICONS: Record<string, any> = {
   magnet: IconMagnet,
   world: IconWorld,
   share: IconShare,
-  comments: IconMessageCircle,
 };
 
 function iconOf(id: string) {
