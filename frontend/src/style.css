@@ -702,8 +702,8 @@ a {
 /* ---------------- 磁力链接助手 (油猴脚本移植) ---------------- */
 .magnet-fab {
   position: fixed;
-  right: 20px;
-  bottom: 96px;
+  right: 22px;
+  bottom: 26px;
   z-index: 299;
   width: 46px;
   height: 46px;
@@ -778,7 +778,7 @@ a {
 .fab-host {
   position: fixed;
   right: 20px;
-  bottom: 28px;
+  bottom: 96px;
   z-index: 300;
   display: flex;
   flex-direction: column;

@@ -341,7 +341,7 @@ onBeforeUnmount(() => {
 
     <FabMenu :items="fabItems" @select="onFab" />
 
-    <!-- 磁力链接助手: 悬浮一键复制按钮 (油猴脚本移植) -->
+    <!-- 磁力链接助手: 加号下方的一键复制磁力按钮 (油猴脚本移植) -->
     <button
       v-if="magnetCount > 0"
       class="magnet-fab"
@@ -351,7 +351,7 @@ onBeforeUnmount(() => {
     >
       <IconMagnet size="21" stroke="1.8" />
       <span class="magnet-badge">{{ magnetCount }}</span>
-      <span class="magnet-tip" :class="{ show: magnetTip }">复制磁力链接</span>
+      <span class="magnet-tip" :class="{ show: magnetTip }">一键复制磁力链接</span>
     </button>
 
     <!-- magnet dialog -->
