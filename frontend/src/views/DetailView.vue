@@ -210,18 +210,13 @@ function onFab(id: string) {
       share(articleUrl.value);
       break;
     case 'magnet':
-      magnetClicks.value++;
-      if (magnetClicks.value >= 3) {
-        magnetDialog.value = true;
-        magnetIndex.value = 0;
-      } else {
-        toast('...'.repeat(magnetClicks.value));
-      }
+      // 点击一次直接弹出磁力列表
+      magnetDialog.value = true;
+      magnetIndex.value = 0;
       break;
   }
 }
 
-const magnetClicks = ref(0);
 const magnetDialog = ref(false);
 const magnetIndex = ref(0);
 
