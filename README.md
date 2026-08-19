@@ -39,7 +39,36 @@ docker compose up -d
 - 后端镜像 `ghcr.io/mogvl/hacg-web/hacg-web-server:latest`（数据目录 `/data`，映射为 named volume `hacg-data`；NAS 等场景可在 compose 中改成绑定挂载，如 `/volume1/docker/hacg:/data`）
 - 更新：`docker compose pull && docker compose up -d`
 
-`docker-compose.yml` 完整内容见仓库根目录。
+`docker-compose.yml` 完整内容：
+
+```yaml
+# hacg-web 一键部署（镜像由 GitHub Actions 自动构建推送到 GHCR）
+# 用法：docker compose up -d   访问 http://<主机>:8200
+services:
+  hacg-web:
+    image: ghcr.io/mogvl/hacg-web/hacg-web-frontend:latest
+    container_name: hacg-web
+    ports:
+      - "8200:80"
+    environment:
+      - TZ=Asia/Shanghai
+    restart: unless-stopped
+
+  hacg-server:
+    image: ghcr.io/mogvl/hacg-web/hacg-web-server:latest
+    container_name: hacg-server
+    environment:
+      - TZ=Asia/Shanghai
+      - HACG_DATA_DIR=/data
+    volumes:
+      # 想要绑定挂载（NAS 等）时改为：
+      # - /volume1/docker/hacg:/data
+      - hacg-data:/data
+    restart: unless-stopped
+
+volumes:
+  hacg-data:
+```
 
 ## 功能对照（与原版 yueeng/hacg 逐项对齐）
 
