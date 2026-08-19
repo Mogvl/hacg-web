@@ -14,6 +14,7 @@ import { httpGetAwait, httpPostAwait } from './http.js';
 import { parseArticleList, parseArticleDetail } from './article.js';
 import { loadComments, voteComment, postComment } from './comment.js';
 import { proxyFetch, proxyImage } from './proxy.js';
+import { translateBatch } from './translate.js';
 
 const PORT = process.env.BACKEND_PORT || 8201;
 const app = express();
@@ -170,6 +171,13 @@ app.post('/api/comments/add', wrap(async (req, res) => {
   });
   if (result.error) return res.status(502).json(result);
   res.json(result);
+}));
+
+// 标签日文→中文翻译(词典优先, 在线兜底)
+app.post('/api/translate', wrap(async (req, res) => {
+  const texts = Array.isArray(req.body?.texts) ? req.body.texts.slice(0, 100) : [];
+  const map = await translateBatch(texts);
+  res.json({ map });
 }));
 
 app.get('/api/user', wrap((req, res) => {

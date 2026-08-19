@@ -115,6 +115,13 @@ export function getArticle(url: string) {
   return request<ArticleDetail>(`/api/article?url=${encodeURIComponent(url)}`);
 }
 
+export function translateTags(texts: string[]) {
+  return request<{ map: Record<string, string> }>('/api/translate', {
+    method: 'POST',
+    body: JSON.stringify({ texts }),
+  });
+}
+
 export function getUser() {
   return request<{ user: number }>('/api/user');
 }

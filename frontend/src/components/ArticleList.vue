@@ -5,7 +5,7 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { IconCat } from '@tabler/icons-vue';
 import type { Article } from '../api';
-import { getArticles } from '../api';
+import { getArticles, translateTags } from '../api';
 import { toast } from '../utils';
 import ArticleCard from './ArticleCard.vue';
 
@@ -23,6 +23,7 @@ const pages = ref<PageState[]>([{ url: props.url, next: null, prev: null }]);
 const pageIdx = ref(0);
 
 const items = ref<Article[]>([]);
+const tagNames = ref<Record<string, string>>({});
 const status = ref<'idle' | 'loading' | 'error' | 'complete'>('idle');
 const retryFlag = ref(false);
 const toasting = ref(false);
@@ -61,6 +62,7 @@ async function query(refresh = false) {
     const page = await getArticles(refresh ? target : (current.value.next || target));
     if (seq !== querySeq) return;
     if (page.title) emit('title', page.title);
+    translatePageTags(page.articles);
     if (refresh) {
       items.value = page.articles;
       // 更新当前页的 next/prev (下一跳)
@@ -86,6 +88,27 @@ async function query(refresh = false) {
       }
     }
     return 0;
+  }
+}
+
+let translating = false;
+async function translatePageTags(articles: Article[]) {
+  if (translating) return;
+  const pending: string[] = [];
+  for (const a of articles) {
+    for (const t of a.tags) {
+      if (t.name && !(t.name in tagNames.value)) pending.push(t.name);
+    }
+  }
+  if (!pending.length) return;
+  translating = true;
+  try {
+    const r = await translateTags(pending);
+    tagNames.value = { ...tagNames.value, ...r.map };
+  } catch {
+    /* 翻译失败保留原文 */
+  } finally {
+    translating = false;
   }
 }
 
@@ -203,7 +226,12 @@ onMounted(() => {
       <span>加载失败，点击重试</span>
     </div>
     <div v-else class="article-list">
-      <ArticleCard v-for="a in items" :key="String(a.id) + (a.link || '')" :article="a" />
+      <ArticleCard
+        v-for="a in items"
+        :key="String(a.id) + (a.link || '')"
+        :article="a"
+        :tag-names="tagNames"
+      />
     </div>
     <div
       v-if="(footer.clickable || items.length > 0) && !(error && items.length === 0)"

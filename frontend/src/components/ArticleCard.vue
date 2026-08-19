@@ -9,7 +9,11 @@ import type { Article } from '../api';
 import { imageProxyUrl } from '../api';
 import { formatCnDate } from '../utils';
 
-const props = defineProps<{ article: Article }>();
+const props = defineProps<{ article: Article; tagNames?: Record<string, string> }>();
+
+function tagName(t: TagLike): string {
+  return props.tagNames?.[t.name] || t.name;
+}
 const router = useRouter();
 
 // 原版每卡一色的行为保留, 但校准为低饱和粉紫系
@@ -114,8 +118,8 @@ function openTag(t: TagLike, e: Event) {
         v-for="(t, i) in article.tags"
         :key="i"
         class="chip"
-        @click.stop="openTag(t, $event)"
-      >标签为 {{ t.name }}</span>
+        @click.stop="openTag({ name: tagName(t), url: t.url }, $event)"
+      >标签为 {{ tagName(t) }}</span>
     </div>
   </div>
 </template>
