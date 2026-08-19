@@ -58,6 +58,13 @@ export function formatListTime(datetime: string | null): string {
   return `${y}-${m}-${day} ${String(h).padStart(2, '0')}:${ss}`;
 }
 
+// 原站式中文日期: 2026年8月18日
+export function formatCnDate(datetime: string | null): string {
+  const d = datetime ? new Date(datetime) : new Date();
+  if (Number.isNaN(d.getTime())) return '';
+  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+}
+
 // ---------- clipboard ----------
 
 export async function clipboard(text: string): Promise<boolean> {

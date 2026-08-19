@@ -1,37 +1,32 @@
 <script setup lang="ts">
+// 卡片排版对齐 hacg.me 原站:
+//   标题 → meta 行(发表于<时间链接>由<作者链接>, 均可点击跳转) → 图 → 摘要
+//   → footer 行(发表在<分类>、标签为<标签> chips, 点击跳转分类/标签列表)
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { IconPhoto } from '@tabler/icons-vue';
 import type { Article } from '../api';
 import { imageProxyUrl } from '../api';
-import { formatListTime } from '../utils';
+import { formatCnDate } from '../utils';
 
 const props = defineProps<{ article: Article }>();
 const router = useRouter();
 
-// ArticleHolder: text1/text4 get one random color per card; chips random translucent colors
+// 原版每卡一色的行为保留, 但校准为低饱和粉紫系
 const color = `hsla(${330 + Math.floor(Math.random() * 40)}, 48%, 62%, 1)`;
 
 interface TagLike {
   name: string;
   url: string;
 }
-const expend = computed<TagLike[]>(() => {
-  const { tags, category, author } = props.article;
-  return [...tags, ...(category ? [category] : []), ...(author ? [author] : [])].filter(Boolean);
-});
-// chips: 统一低饱和玻璃底(克制, 不逐 chip 随机色)
-const chipColors = computed(() => expend.value.map(() => 'rgba(255, 255, 255, 0.62)'));
 
 const showTitle = computed(() => props.article.title.length > 0);
 const showMeta = computed(() => true);
-const showTags = computed(() => expend.value.length > 0);
 const showContent = computed(() => !!props.article.content);
+const showCats = computed(() => !!props.article.category);
+const showTags = computed(() => props.article.tags.length > 0);
 
-const metaText = computed(() => {
-  const a = props.article;
-  return `发表于${formatListTime(a.time)}由${a.author?.name || ''}`;
-});
+const metaTime = computed(() => formatCnDate(props.article.time));
 
 const imgState = ref<'loading' | 'loaded' | 'error'>('loading');
 const imgSrc = ref(props.article.image);
@@ -47,7 +42,7 @@ function onImgError() {
   }
 }
 
-// glide-like fade-in
+// 入场动画
 const shown = ref(false);
 let io: IntersectionObserver | null = null;
 let el: HTMLElement | null = null;
@@ -85,6 +80,17 @@ function openTag(t: TagLike, e: Event) {
 
 <template>
   <div ref="el" class="card" :class="{ new: shown }" @click="open">
+    <div v-if="showTitle" class="title" :style="{ color }" @click.stop="open">{{ article.title }}</div>
+    <div v-if="showMeta" class="meta">
+      <span class="meta-pre" :style="{ color }">发表于</span>
+      <a class="meta-link" @click.stop="open">{{ metaTime }}</a>
+      <span class="meta-pre" :style="{ color }">由</span>
+      <a
+        v-if="article.author"
+        class="meta-link"
+        @click.stop="openTag(article.author, $event)"
+      >{{ article.author.name }}</a>
+    </div>
     <div class="thumb">
       <img
         v-if="article.image"
@@ -97,19 +103,19 @@ function openTag(t: TagLike, e: Event) {
       />
       <div v-else class="ph"><IconPhoto size="34" stroke="1.2" /></div>
     </div>
-    <div v-if="showTags" class="chips">
+    <div v-if="showContent" class="excerpt">{{ article.content }}</div>
+    <div v-if="showCats || showTags" class="tag-row">
       <span
-        v-for="(t, i) in expend"
+        v-if="article.category"
+        class="chip chip-cat"
+        @click.stop="openTag(article.category, $event)"
+      >发表在 {{ article.category.name }}</span>
+      <span
+        v-for="(t, i) in article.tags"
         :key="i"
         class="chip"
-        :style="{ background: chipColors[i] }"
-        @click="openTag(t, $event)"
-      >
-        {{ t.name }}
-      </span>
+        @click.stop="openTag(t, $event)"
+      >标签为 {{ t.name }}</span>
     </div>
-    <div v-if="showTitle" class="title" :style="{ color }">{{ article.title }}</div>
-    <div v-if="showMeta" class="meta" :style="{ color }">{{ metaText }}</div>
-    <div v-if="showContent" class="excerpt">{{ article.content }}</div>
   </div>
 </template>
