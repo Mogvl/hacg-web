@@ -29,7 +29,7 @@ export function parseCommentElement(el, $, depth = 1) {
       children.push(parseCommentElement($c, $, depth + 1));
     }
   }
-  return { id, parent, content, user, face, moderation, time, children, depth };
+  return { id, parent, content, user, face, moderation, time, children, depth, uniqueId: `${id}_${parent}` };
 }
 
 // Comment(html fragment) — comment_list body divs.
