@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // InfoActivity parity: content webview page + comments page (swipeable pager),
 // FAB actions (browser / comments / share / magnets), image save dialog.
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import type { Article } from '../api';
 import { getArticle, imageProxyUrl } from '../api';
@@ -209,6 +209,22 @@ async function share(url: string) {
   if (await clipboard(text)) toast(`已复制 ${text.slice(0, 60)}…`);
 }
 
+// share with the image attached (the app downloads then ACTION_SEND the file)
+async function shareImage(url: string) {
+  try {
+    const resp = await fetch(imageProxyUrl(url));
+    const blob = await resp.blob();
+    const file = new File([blob], url.split('/').pop() || 'image', { type: blob.type });
+    if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: article.value?.title || '' });
+      return;
+    }
+  } catch {
+    /* fall back to text share */
+  }
+  share(url);
+}
+
 // ---------- image save dialog (JsFace.save parity) ----------
 const saveDialog = ref(false);
 const saveUrl = ref('');
@@ -250,10 +266,6 @@ function back() {
     router.back();
   }
 }
-
-watch(page, () => {
-  // no-op: pager index tracked for back behavior
-});
 
 // Android back parity: comments tab → content tab on back gesture
 function onPopState() {
@@ -346,7 +358,7 @@ onBeforeUnmount(() => {
           alt=""
         />
         <div class="dlg-actions">
-          <button class="dbtn" @click="share(saveUrl)">分享</button>
+          <button class="dbtn" @click="shareImage(saveUrl)">分享</button>
           <button class="dbtn" @click="saveImage">保存</button>
           <button class="dbtn muted" @click="saveDialog = false">取消</button>
         </div>
