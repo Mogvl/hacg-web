@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { IconPhoto } from '@tabler/icons-vue';
 import type { Article } from '../api';
 import { imageProxyUrl } from '../api';
-import { formatListTime, randomColor } from '../utils';
+import { formatListTime } from '../utils';
 
 const props = defineProps<{ article: Article }>();
 const router = useRouter();
 
 // ArticleHolder: text1/text4 get one random color per card; chips random translucent colors
-const color = randomColor();
+const color = `hsla(${330 + Math.floor(Math.random() * 40)}, 48%, 62%, 1)`;
 
 interface TagLike {
   name: string;
@@ -19,7 +20,8 @@ const expend = computed<TagLike[]>(() => {
   const { tags, category, author } = props.article;
   return [...tags, ...(category ? [category] : []), ...(author ? [author] : [])].filter(Boolean);
 });
-const chipColors = computed(() => expend.value.map(() => randomColor(0.75)));
+// chips: 统一低饱和玻璃底(克制, 不逐 chip 随机色)
+const chipColors = computed(() => expend.value.map(() => 'rgba(255, 255, 255, 0.62)'));
 
 const showTitle = computed(() => props.article.title.length > 0);
 const showMeta = computed(() => true);
@@ -93,14 +95,14 @@ function openTag(t: TagLike, e: Event) {
         @error="onImgError"
         alt=""
       />
-      <div v-else class="ph">🖼</div>
+      <div v-else class="ph"><IconPhoto size="34" stroke="1.2" /></div>
     </div>
     <div v-if="showTags" class="chips">
       <span
         v-for="(t, i) in expend"
         :key="i"
         class="chip"
-        :style="{ background: chipColors[i], color: '#fff' }"
+        :style="{ background: chipColors[i] }"
         @click="openTag(t, $event)"
       >
         {{ t.name }}

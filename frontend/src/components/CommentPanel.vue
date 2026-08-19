@@ -3,10 +3,11 @@
 // comment FAB, nested comments.
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { IconPencil, IconSelector } from '@tabler/icons-vue';
 import type { Comment, Sorting } from '../api';
 import { loadComments } from '../api';
 import { state } from '../store';
-import { randomColor, toast } from '../utils';
+import { toast } from '../utils';
 import CommentItem from './CommentItem.vue';
 import CommentPostDialog from './CommentPostDialog.vue';
 
@@ -20,7 +21,6 @@ const status = ref<'idle' | 'loading' | 'error' | 'complete'>('idle');
 const sortOpen = ref(false);
 const posting = ref(false);
 
-const fabColor = randomColor();
 
 const footer = computed(() => {
   if (status.value === 'error') return { text: '加载失败', clickable: true };
@@ -92,7 +92,7 @@ watch(
 <template>
   <div class="detail-host" style="min-height: 0">
     <div class="tabs" style="position: static">
-      <button class="tab active" @click="sortOpen = !sortOpen">评论排序 ▾</button>
+      <button class="tab active" @click="sortOpen = !sortOpen"><span style="display:inline-flex;align-items:center;gap:6px">评论排序<IconSelector size="15" stroke="1.6" /></span></button>
     </div>
     <div v-if="sortOpen" class="dlg-backdrop" style="z-index: 180" @click.self="sortOpen = false">
       <div class="dlg" style="min-width: 240px">
@@ -136,13 +136,8 @@ watch(
     </div>
 
     <div class="fab-host">
-      <button
-        class="fab"
-        :style="{ background: fabColor }"
-        title="发表评论"
-        @click="posting = true"
-      >
-        ✎
+      <button class="fab" title="发表评论" @click="posting = true">
+        <IconPencil size="22" stroke="1.6" />
       </button>
     </div>
 

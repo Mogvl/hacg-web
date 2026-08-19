@@ -3,6 +3,16 @@
 // FAB actions (browser / comments / share / magnets), image save dialog.
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import {
+  IconCat,
+  IconChevronLeft,
+  IconMagnet,
+  IconMessageCircle,
+  IconPlus,
+  IconShare,
+  IconWorld,
+  IconX,
+} from '@tabler/icons-vue';
 import type { Article } from '../api';
 import { getArticle, imageProxyUrl } from '../api';
 import { state } from '../store';
@@ -40,10 +50,10 @@ const articleId = computed(() => {
 const titleText = computed(() => article.value?.title || '琉璃神社');
 
 const fabItems = computed<FabItem[]>(() => [
-  { id: 'magnet', icon: '🧲', label: '链接', show: magnets.value.length > 0 },
-  { id: 'browser', icon: '🌐', label: '使用浏览器打开' },
-  { id: 'share', icon: '📤', label: '分享' },
-  { id: 'comments', icon: '💬', label: '评论' },
+  { id: 'magnet', icon: 'magnet', label: '链接', show: magnets.value.length > 0 },
+  { id: 'browser', icon: 'world', label: '使用浏览器打开' },
+  { id: 'share', icon: 'share', label: '分享' },
+  { id: 'comments', icon: 'comments', label: '评论' },
 ]);
 
 // ---------- load ----------
@@ -289,27 +299,25 @@ onBeforeUnmount(() => {
 <template>
   <div class="detail-host">
     <header class="toolbar">
-      <button class="btn" @click="back">‹</button>
+      <button class="btn" @click="back"><IconChevronLeft size="22" stroke="1.5" /></button>
       <h1>{{ titleText }}</h1>
     </header>
 
     <div ref="pagerEl" class="pager" @scroll.passive="onPagerScroll">
       <!-- page 0: article content (fragment_info_web) -->
       <div class="page" style="position: relative">
-        <div v-if="progress" class="spin-wrap" style="position: sticky; top: 40%">
-          <div class="spin"></div>
+        <div v-if="progress" class="article-content" style="padding-top: 24px">
+          <div class="skeleton-card" style="padding-top: 4px">
+            <div class="sk-line" style="height: 22px; width: 74%"></div>
+            <div class="sk-block sk-shimmer" style="min-height: 140px; margin: 16px 16px 0"></div>
+            <div class="sk-line sk-shimmer"></div>
+            <div class="sk-line short sk-shimmer"></div>
+            <div class="sk-line sk-shimmer"></div>
+            <div class="sk-line short sk-shimmer"></div>
+          </div>
         </div>
         <div v-else-if="error" class="error-cat" @click="query()">
-          <svg viewBox="0 0 120 120">
-            <ellipse cx="60" cy="96" rx="34" ry="10" fill="#e0e0e0" />
-            <path
-              d="M28 52c-6-8-4-18 2-22 6-4 12-2 16 2-10 2-14 8-18 14v30c0 12 14 20 32 20s32-8 32-20V46c-4-6-8-12-18-14 4-4 10-6 16-2 6 4 8 14 2 22"
-              fill="#2e2e2e"
-            />
-            <circle cx="48" cy="52" r="4" fill="#ffd54f" />
-            <circle cx="72" cy="52" r="4" fill="#ffd54f" />
-            <path d="M54 62h12v4H54z" fill="#ffd54f" />
-          </svg>
+          <IconCat size="34" stroke="1.2" />
           <span>加载失败，点击重试</span>
         </div>
         <div

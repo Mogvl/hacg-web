@@ -4,6 +4,14 @@
 // (through the backend proxy); external hosts open in a new tab.
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import {
+  IconChevronLeft,
+  IconChevronRight,
+  IconExternalLink,
+  IconHome,
+  IconMenu2,
+  IconRefresh,
+} from '@tabler/icons-vue';
 import { getUser, proxyUrl } from '../api';
 import { state, refreshState } from '../store';
 import { isListUrl } from '../utils';
@@ -181,12 +189,12 @@ onBeforeUnmount(() => {
 <template>
   <div class="web-host">
     <header class="toolbar">
-      <button class="btn" @click="back">‹</button>
+      <button class="btn" @click="back"><IconChevronLeft size="22" stroke="1.5" /></button>
       <h1 style="font-size: 15px">{{ hostLabel }}</h1>
       <div class="menu-wrap">
-        <button class="btn" @click="menuOpen = !menuOpen">⋮</button>
+        <button class="btn" @click="menuOpen = !menuOpen"><IconMenu2 size="20" stroke="1.5" /></button>
         <div v-if="menuOpen" class="menu-drop">
-          <button class="mi" @click="openInBrowser">🔗 浏览器打开</button>
+          <button class="mi" @click="openInBrowser"><span class="mi-ic"><IconExternalLink size="17" stroke="1.6" /></span>浏览器打开</button>
         </div>
       </div>
     </header>
@@ -204,10 +212,10 @@ onBeforeUnmount(() => {
     ></iframe>
     <div v-else class="spin-wrap"><div class="spin"></div></div>
     <div class="web-bar">
-      <button class="btn" title="首页" @click="goHome">🏠</button>
-      <button class="btn" title="后退" :disabled="!canBack" @click="goBack">‹</button>
-      <button class="btn" title="前进" :disabled="!canForward" @click="goForward">›</button>
-      <button class="btn" title="刷新" @click="goRefresh">⟳</button>
+      <button class="btn" title="首页" @click="goHome"><IconHome size="19" stroke="1.6" /></button>
+      <button class="btn" title="后退" :disabled="!canBack" @click="goBack"><IconChevronLeft size="20" stroke="1.6" /></button>
+      <button class="btn" title="前进" :disabled="!canForward" @click="goForward"><IconChevronRight size="20" stroke="1.6" /></button>
+      <button class="btn" title="刷新" @click="goRefresh"><IconRefresh size="19" stroke="1.6" /></button>
       <span class="url">{{ showUrl }}</span>
     </div>
   </div>

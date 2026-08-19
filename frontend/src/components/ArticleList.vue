@@ -2,6 +2,7 @@
 // ArticleFragment parity: paging list, pull-to-refresh, infinite scroll,
 // footer load states, black-cat error retry, per-item slide-in animation.
 import { computed, onMounted, ref, watch } from 'vue';
+import { IconCat } from '@tabler/icons-vue';
 import type { Article } from '../api';
 import { getArticles } from '../api';
 import { toast } from '../utils';
@@ -145,23 +146,15 @@ onMounted(() => {
     <div class="ptr" :class="{ show: pull > 0 || refreshing }" :style="{ height: pull + 'px' }">
       {{ refreshing ? '加载中…' : '下拉刷新' }}
     </div>
-    <div v-if="loading && items.length === 0" class="spin-wrap"><div class="spin"></div></div>
+    <div v-if="loading && items.length === 0" class="skeleton-list">
+      <div v-for="i in 3" :key="i" class="skeleton-card">
+        <div class="sk-block sk-shimmer"></div>
+        <div class="sk-line sk-shimmer"></div>
+        <div class="sk-line short sk-shimmer"></div>
+      </div>
+    </div>
     <div v-else-if="error && items.length === 0" class="error-cat" @click="retry">
-      <svg viewBox="0 0 120 120">
-        <ellipse cx="60" cy="96" rx="34" ry="10" fill="#e0e0e0" />
-        <path
-          d="M28 52c-6-8-4-18 2-22 6-4 12-2 16 2-10 2-14 8-18 14v30c0 12 14 20 32 20s32-8 32-20V46c-4-6-8-12-18-14 4-4 10-6 16-2 6 4 8 14 2 22"
-          fill="#2e2e2e"
-        />
-        <path d="M24 40l-10-2c-4-1-4-7 0-8l10 2 6 5-6 3z" fill="#2e2e2e" />
-        <path d="M96 40l10-2c4-1 4-7 0-8l-10 2-6 5 6 3z" fill="#2e2e2e" />
-        <circle cx="48" cy="52" r="4" fill="#ffd54f" />
-        <circle cx="72" cy="52" r="4" fill="#ffd54f" />
-        <circle cx="49" cy="53" r="1.6" fill="#111" />
-        <circle cx="73" cy="53" r="1.6" fill="#111" />
-        <path d="M54 62h12v4H54z" fill="#ffd54f" />
-        <path d="M52 84c6 4 10 4 16 0" stroke="#111" stroke-width="2" fill="none" stroke-linecap="round" />
-      </svg>
+      <IconCat size="34" stroke="1.2" />
       <span>加载失败，点击重试</span>
     </div>
     <div v-else class="article-list">

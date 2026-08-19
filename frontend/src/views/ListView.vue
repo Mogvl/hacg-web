@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // ListActivity parity: back arrow + title + article list for search/tag/author/category URLs.
 import { computed } from 'vue';
+import { IconChevronLeft } from '@tabler/icons-vue';
 import { useRoute, useRouter } from 'vue-router';
 import ArticleList from '../components/ArticleList.vue';
 
@@ -19,7 +20,7 @@ function back() {
 <template>
   <div style="flex: 1; display: flex; flex-direction: column; min-height: 0">
     <header class="toolbar">
-      <button class="btn" @click="back">‹</button>
+      <button class="btn" @click="back"><IconChevronLeft size="22" stroke="1.5" /></button>
       <h1>{{ name }}</h1>
     </header>
     <ArticleList :key="url" :url="url" />

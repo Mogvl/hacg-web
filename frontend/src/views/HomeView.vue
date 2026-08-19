@@ -2,6 +2,19 @@
 // MainActivity parity: category tabs, search, menus (user/philosophy/config/auto/about/update).
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import {
+  IconArrowRight,
+  IconBolt,
+  IconClock,
+  IconGlobe,
+  IconInfoCircle,
+  IconMenu2,
+  IconMessages,
+  IconRefresh,
+  IconSearch,
+  IconUserCircle,
+  IconX,
+} from '@tabler/icons-vue';
 import ArticleList from '../components/ArticleList.vue';
 import HostDialog from '../components/HostDialog.vue';
 import { autoHost, checkConfig, updateConfig } from '../api';
@@ -126,18 +139,28 @@ onMounted(async () => {
   <div style="flex: 1; display: flex; flex-direction: column; min-height: 0">
     <header class="toolbar">
       <h1>{{ title }}</h1>
-      <button v-if="searchOpen" class="btn" @click="searchOpen = false">✕</button>
-      <button v-else class="btn" title="搜索" @click="openSearch">🔍</button>
-      <button class="btn" title="哲学" @click="goPhilosophy">📜</button>
-      <button class="btn" title="用户信息" @click="goUser">👤</button>
+      <button v-if="searchOpen" class="btn" title="关闭搜索" @click="searchOpen = false">
+        <IconX size="19" stroke="1.5" />
+      </button>
+      <button v-else class="btn" title="搜索" @click="openSearch">
+        <IconSearch size="20" stroke="1.5" />
+      </button>
+      <button class="btn" title="哲学" @click="goPhilosophy">
+        <IconMessages size="20" stroke="1.5" />
+      </button>
+      <button class="btn" title="用户信息" @click="goUser">
+        <IconUserCircle size="20" stroke="1.5" />
+      </button>
       <div class="menu-wrap">
-        <button class="btn" title="菜单" @click="openMenu">⋮</button>
+        <button class="btn" title="菜单" @click="openMenu">
+          <IconMenu2 size="20" stroke="1.5" />
+        </button>
         <div v-if="menuOpen" class="menu-drop" @click.self="menuOpen = false">
-          <button class="mi" @click="menuOpen = false; clearHistory()">清除搜索记录</button>
-          <button class="mi" @click="menuOpen = false; hostDialogOpen = true">神社备用域名</button>
-          <button class="mi" @click="menuOpen = false; doCheckConfig()">检测域名配置</button>
-          <button class="mi" @click="menuOpen = false; doAuto()">自动选择可用域名</button>
-          <button class="mi" @click="menuOpen = false; aboutOpen = true">关于</button>
+          <button class="mi" @click="menuOpen = false; clearHistory()"><span class="mi-ic"><IconClock size="17" stroke="1.6" /></span>清除搜索记录</button>
+          <button class="mi" @click="menuOpen = false; hostDialogOpen = true"><span class="mi-ic"><IconGlobe size="17" stroke="1.6" /></span>神社备用域名</button>
+          <button class="mi" @click="menuOpen = false; doCheckConfig()"><span class="mi-ic"><IconRefresh size="17" stroke="1.6" /></span>检测域名配置</button>
+          <button class="mi" @click="menuOpen = false; doAuto()"><span class="mi-ic"><IconBolt size="17" stroke="1.6" /></span>自动选择可用域名</button>
+          <button class="mi" @click="menuOpen = false; aboutOpen = true"><span class="mi-ic"><IconInfoCircle size="17" stroke="1.6" /></span>关于</button>
         </div>
       </div>
     </header>
@@ -150,7 +173,7 @@ onMounted(async () => {
           placeholder="搜索"
           @keydown.enter="submitSearch"
         />
-        <button class="btn" @click="submitSearch">➤</button>
+        <button class="btn" @click="submitSearch"><IconArrowRight size="18" stroke="1.6" /></button>
       </div>
     </div>
 
@@ -174,7 +197,7 @@ onMounted(async () => {
         <div class="dlg-title" style="font-size: 14px; color: #888">搜索历史</div>
         <div class="dlg-list">
           <label v-for="q in history" :key="q" @click="useHistory(q)">
-            <span>🔍 {{ q }}</span>
+            <span class="mi-ic" style="color: var(--ink-3)"><IconClock size="16" stroke="1.6" /></span><span>{{ q }}</span>
           </label>
         </div>
       </div>
