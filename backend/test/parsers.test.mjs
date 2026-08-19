@@ -10,8 +10,10 @@ import {
   cleanHtml,
   transformEntryContent,
   extractMagnets,
+  extractMagnetsText,
 } from '../src/article.js';
 import { parseCommentList } from '../src/comment.js';
+import * as cheerio from 'cheerio';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => readFileSync(path.join(here, 'fixtures', name), 'utf8');
@@ -91,11 +93,19 @@ test('transformEntryContent: strips width/height, lazy images', () => {
   assert.ok(out.includes('下载此图'));
 });
 
-test('extractMagnets: magnet + baidu', () => {
-  const text = 'magnet/x 0123456789abcdef0123456789abcdef01234567 end and abc12345 wxyz https://pan.baidu.com/s/abc12345?x=1 提取码: wxyz';
-  const out = extractMagnets(text);
-  assert.equal(out[0], '0123456789abcdef0123456789abcdef01234567');
+test('extractMagnetsText: hex40 + base32 + baidu', () => {
+  const text = 'x 0123456789abcdef0123456789abcdef01234567 end ABCDEFGHIJKLMNOPQRSTUVWXYZ234567 b32 and abc12345 wxyz';
+  const out = extractMagnetsText(text);
+  assert.ok(out.includes('0123456789abcdef0123456789abcdef01234567'), 'hex40');
+  assert.ok(out.includes('abcdefghijklmnopqrstuvwxyz234567'), 'base32 (lowercased)');
   assert.ok(out.includes('abc12345,wxyz'), 'baidu pair');
+});
+
+test('extractMagnets: magnet: link href extraction', () => {
+  const $ = cheerio.load('<div class="entry-content">文本 <a href="magnet:?xt=urn:btih:111122223333444455556666777788889999aabb">下载</a> <a href="magnet:?xt=urn:btih:ABCDEFGHIJKLMNOPQRSTUVWXYZ234567&dn=x">m2</a></div>');
+  const out = extractMagnets($('.entry-content').first(), $);
+  assert.ok(out.includes('111122223333444455556666777788889999aabb'), 'magnet href hex');
+  assert.ok(out.includes('abcdefghijklmnopqrstuvwxyz234567'), 'magnet href base32');
 });
 
 test('parseCommentList: nesting, votes, faces', () => {

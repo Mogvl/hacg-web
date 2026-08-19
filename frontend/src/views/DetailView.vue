@@ -120,10 +120,14 @@ function setupMagnetLinks() {
     if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
     n.parentNode?.replaceChild(frag, n);
   }
+  magnetDomCount.value = contentEl.value.querySelectorAll('a[href^="magnet:?xt=urn:btih:"]').length;
 }
 
 const magnetTip = ref(false);
-const magnetCount = computed(() => magnets.value.length);
+const magnetDomCount = ref(0);
+const magnetCount = computed(
+  () => magnetDomCount.value + magnets.value.filter((m) => isBaiduMagnet(m)).length
+);
 
 // 一键复制页面上所有磁力链接 (+ 百度云项), 与脚本语义一致
 async function copyAllMagnets() {
@@ -145,11 +149,15 @@ async function copyAllMagnets() {
     toast('未找到磁力链接');
     return;
   }
-  if (await clipboard(uniq.join('\n'))) toast(`已复制 ${uniq.length} 个磁力链接`);
+  if (await clipboard(uniq.join('\n'))) {
+    toast(`已复制 ${uniq.length} 个磁力链接`);
+  } else {
+    toast('复制失败，请长按文本手动复制');
+  }
 }
 
 // ---------- content link handling (WebView shouldOverrideUrlLoading parity) ----------
-function onContentClick(e: MouseEvent) {
+async function onContentClick(e: MouseEvent) {
   const target = e.target as HTMLElement;
   const a = target.closest('a');
   if (!a) return;
@@ -164,10 +172,10 @@ function onContentClick(e: MouseEvent) {
   if (!url || url.startsWith('javascript:')) return;
   e.preventDefault();
   if (url.startsWith('magnet:')) {
-    // 点击磁力链接 → 复制该链接
-    clipboard(url).then((ok) => {
-      if (ok) toast(`已复制 ${url}`);
-    });
+    // 点击磁力链接 → 复制该链接 (失败也要有反馈)
+    e.preventDefault();
+    const ok = await clipboard(url);
+    toast(ok ? `已复制 ${url}` : '复制失败，请长按文本手动复制');
     return;
   }
   navigateUrl(url);

@@ -68,23 +68,31 @@ export function formatCnDate(datetime: string | null): string {
 // ---------- clipboard ----------
 
 export async function clipboard(text: string): Promise<boolean> {
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
+  // http(非 localhost) 环境下 navigator.clipboard 不存在, 必须降级 execCommand
+  if (navigator.clipboard?.writeText) {
     try {
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.style.position = 'fixed';
-      ta.style.opacity = '0';
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
+      await navigator.clipboard.writeText(text);
       return true;
     } catch {
-      return false;
+      /* fall through to execCommand */
     }
+  }
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.top = '0';
+    ta.style.left = '0';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    ta.setSelectionRange(0, text.length);
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
   }
 }
 

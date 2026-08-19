@@ -215,14 +215,41 @@ export function transformEntryContent(cleanHtmlStr, baseUrl) {
   return $.html();
 }
 
-// Common.kt magnet(): rmagnet (40/32 hex) + rbaidu (8+4) — applied to entry text.
+// 磁力提取(油猴助手语义扩展):
+//   文本: 40/32位 hex + 32位 base32 (A-Z2-7) + 百度云 8+4
+//   链接: a[href^="magnet:?xt=urn:btih:"] 中的 hash
 const RMAGNET = /(?<=[^\da-z])([a-z0-9]{40}|[a-z0-9]{32})(?=[^\da-z])/gi;
+const RBASE32 = /(?<=[^a-z2-7])([A-Z2-7]{32})(?=[^A-Z2-7])/g;
 const RBAIDU = /\b([a-z0-9]{8})\b\s+\b([a-z0-9]{4})\b/gi;
 
-export function extractMagnets(text) {
+export function extractMagnetsText(text) {
   const out = [];
-  for (const m of text.matchAll(RMAGNET)) out.push(m[1]);
+  const seen = new Set();
+  const push = (h) => {
+    const k = h.toLowerCase();
+    if (!seen.has(k)) {
+      seen.add(k);
+      out.push(k);
+    }
+  };
+  for (const m of text.matchAll(RMAGNET)) push(m[1]);
+  for (const m of text.matchAll(RBASE32)) push(m[1]);
   for (const m of text.matchAll(RBAIDU)) out.push(`${m[1]},${m[2]}`);
+  return out;
+}
+
+export function extractMagnets(entryEl, $) {
+  const out = extractMagnetsText(entryEl.text());
+  entryEl.find('a[href^="magnet:"]').each((_, a) => {
+    const href = $(a).attr('href') || '';
+    const m = /^magnet:\?xt=urn:btih:([^&]+)/i.exec(href);
+    if (m) {
+      const h = decodeURIComponent(m[1]);
+      if (/^[0-9a-f]{40}$/i.test(h) || /^[0-9a-f]{32}$/i.test(h) || /^[A-Z2-7]{32}$/.test(h)) {
+        out.push(h.toLowerCase());
+      }
+    }
+  });
   return out;
 }
 
@@ -238,7 +265,7 @@ export function parseArticleDetail(html, url) {
     const clean = cleanHtml(entryEl.html() || '', url);
     const body = transformEntryContent(clean, url);
     contentHtml = body;
-    magnets = extractMagnets(entryEl.text());
+    magnets = extractMagnets(entryEl, $);
   }
   return { article, contentHtml, magnets };
 }
