@@ -2,7 +2,7 @@
 // InfoActivity parity (无评论/点赞): 单页文章内容 + FAB(浏览器/分享/磁力) + 存图对话框。
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { IconCat, IconChevronLeft } from '@tabler/icons-vue';
+import { IconCat, IconChevronLeft, IconMagnet } from '@tabler/icons-vue';
 import type { Article } from '../api';
 import { getArticle, imageProxyUrl } from '../api';
 import { state } from '../store';
@@ -50,6 +50,7 @@ async function query() {
     progress.value = false;
     await nextTick();
     setupLazy();
+    setupMagnetLinks();
   } catch {
     progress.value = false;
     error.value = true;
@@ -87,6 +88,66 @@ function setupLazy() {
   imgs.forEach((img) => io?.observe(img));
 }
 
+// ---------- 磁力链接助手 (油猴脚本 hacg.icu磁力链接助手 移植) ----------
+// 内容文本中的 40位hex / 32位base32 hash 自动转为可点击磁力链接
+const MAG_PATTERN = /\b([0-9a-fA-F]{40}|[A-Z2-7]{32})\b/g;
+
+function setupMagnetLinks() {
+  if (!contentEl.value) return;
+  const walker = document.createTreeWalker(contentEl.value, NodeFilter.SHOW_TEXT);
+  const targets: Text[] = [];
+  while (walker.nextNode()) {
+    const n = walker.currentNode as Text;
+    const p = n.parentElement;
+    if (!p || /^(A|SCRIPT|STYLE|TITLE|PRE)$/i.test(p.tagName)) continue;
+    if (n.nodeValue && MAG_PATTERN.test(n.nodeValue)) targets.push(n);
+  }
+  for (const n of targets) {
+    const text = n.nodeValue || '';
+    const frag = document.createDocumentFragment();
+    let last = 0;
+    let m: RegExpExecArray | null;
+    MAG_PATTERN.lastIndex = 0;
+    while ((m = MAG_PATTERN.exec(text))) {
+      if (m.index > last) frag.appendChild(document.createTextNode(text.slice(last, m.index)));
+      const a = document.createElement('a');
+      a.className = 'magnet-auto';
+      a.href = `magnet:?xt=urn:btih:${m[1]}`;
+      a.textContent = m[1];
+      frag.appendChild(a);
+      last = MAG_PATTERN.lastIndex;
+    }
+    if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+    n.parentNode?.replaceChild(frag, n);
+  }
+}
+
+const magnetTip = ref(false);
+const magnetCount = computed(() => magnets.value.length);
+
+// 一键复制页面上所有磁力链接 (+ 百度云项), 与脚本语义一致
+async function copyAllMagnets() {
+  const lines: string[] = [];
+  contentEl.value
+    ?.querySelectorAll('a[href^="magnet:?xt=urn:btih:"]')
+    .forEach((a) => lines.push(a.getAttribute('href') || ''));
+  for (const m of magnets.value) {
+    if (isBaiduMagnet(m)) {
+      const [id, code] = m.split(',');
+      lines.push(`https://yun.baidu.com/s/${id} 提取码: ${code}`);
+    } else {
+      const link = magnetOpenLink(m);
+      if (!lines.includes(link)) lines.push(link);
+    }
+  }
+  const uniq = [...new Set(lines)];
+  if (!uniq.length) {
+    toast('未找到磁力链接');
+    return;
+  }
+  if (await clipboard(uniq.join('\n'))) toast(`已复制 ${uniq.length} 个磁力链接`);
+}
+
 // ---------- content link handling (WebView shouldOverrideUrlLoading parity) ----------
 function onContentClick(e: MouseEvent) {
   const target = e.target as HTMLElement;
@@ -102,6 +163,13 @@ function onContentClick(e: MouseEvent) {
   const url = a.href || href;
   if (!url || url.startsWith('javascript:')) return;
   e.preventDefault();
+  if (url.startsWith('magnet:')) {
+    // 点击磁力链接 → 复制该链接
+    clipboard(url).then((ok) => {
+      if (ok) toast(`已复制 ${url}`);
+    });
+    return;
+  }
   navigateUrl(url);
 }
 
@@ -269,6 +337,19 @@ onBeforeUnmount(() => {
     </div>
 
     <FabMenu :items="fabItems" @select="onFab" />
+
+    <!-- 磁力链接助手: 悬浮一键复制按钮 (油猴脚本移植) -->
+    <button
+      v-if="magnetCount > 0"
+      class="magnet-fab"
+      @click="copyAllMagnets"
+      @mouseenter="magnetTip = true"
+      @mouseleave="magnetTip = false"
+    >
+      <IconMagnet size="21" stroke="1.8" />
+      <span class="magnet-badge">{{ magnetCount }}</span>
+      <span class="magnet-tip" :class="{ show: magnetTip }">复制磁力链接</span>
+    </button>
 
     <!-- magnet dialog -->
     <div v-if="magnetDialog" class="dlg-backdrop" @click.self="magnetDialog = false">

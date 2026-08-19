@@ -699,6 +699,81 @@ a {
   background: rgba(255, 255, 255, 0.92);
 }
 
+/* ---------------- 磁力链接助手 (油猴脚本移植) ---------------- */
+.magnet-fab {
+  position: fixed;
+  right: 20px;
+  bottom: 96px;
+  z-index: 299;
+  width: 46px;
+  height: 46px;
+  border: none;
+  border-radius: 50%;
+  background: var(--grad-main);
+  color: #4a3a63;
+  cursor: pointer;
+  box-shadow: var(--shadow-float), var(--hairline), inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.25s var(--ease);
+}
+.magnet-fab:hover {
+  transform: translateY(-2px) scale(1.05);
+}
+.magnet-fab:active {
+  transform: scale(0.94);
+}
+.magnet-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 50%;
+  background: #e2547c;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(226, 84, 124, 0.45);
+}
+.magnet-fab .magnet-tip {
+  position: absolute;
+  right: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%) scale(0.95);
+  opacity: 0;
+  background: rgba(44, 36, 64, 0.85);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+  transition: all 0.25s var(--ease);
+}
+.magnet-fab .magnet-tip.show {
+  opacity: 1;
+  transform: translateY(-50%) scale(1);
+}
+.article-content a.magnet-auto {
+  color: #6d5cf0;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: rgba(109, 92, 240, 0.45);
+  cursor: pointer;
+  word-break: break-all;
+}
+.article-content a.magnet-auto:hover {
+  color: #4a3a63;
+  text-decoration-color: #4a3a63;
+}
+
 /* ---------------- FAB — 悬浮玻璃 ---------------- */
 .fab-host {
   position: fixed;
