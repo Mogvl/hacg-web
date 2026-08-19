@@ -1,7 +1,7 @@
 // 标签翻译模块测试: 种子词典 + 检测逻辑(不依赖外网)。
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { needsTranslation, lookupTranslation, translateBatch } from '../src/translate.js';
+import { needsTranslation, lookupTranslation, translateBatch, needsJapanese, tagCandidatesFor } from '../src/translate.js';
 
 test('needsTranslation: only kana text', () => {
   assert.equal(needsTranslation('ピンクパイナップル'), true);
@@ -27,4 +27,19 @@ test('translateBatch: dictionary + passthrough without network dependency', asyn
   assert.equal(map['纯爱'], '纯爱');
   assert.equal(map['3D'], '3D');
   assert.equal(map['fate'], 'fate');
+});
+
+test('needsJapanese: chinese terms only', () => {
+  assert.equal(needsJapanese('粉红菠萝'), true);
+  assert.equal(needsJapanese('壁纸'), true);
+  assert.equal(needsJapanese('ピンクパイナップル'), false); // 已是日文
+  assert.equal(needsJapanese('fate'), false);
+  assert.equal(needsJapanese('NTR'), false);
+});
+
+test('tagCandidatesFor: reverse dictionary lookup', () => {
+  const cands = tagCandidatesFor('粉红菠萝');
+  assert.ok(cands.includes('ピンクパイナップル'), 'seed value reverse lookup');
+  const cands2 = tagCandidatesFor('幽闭卫星');
+  assert.ok(cands2.includes('幽閉サテライト'), 'seed value reverse lookup 2');
 });

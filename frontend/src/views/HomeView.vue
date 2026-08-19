@@ -45,9 +45,8 @@ function submitSearch() {
   const key = searchText.value.trim();
   if (!key) return;
   saveSearchHistory(key);
-  // ListActivity: wordpress/?s=<key>&submit=搜索
-  const url = `${state.wordpress}/?s=${encodeURIComponent(key)}&submit=${encodeURIComponent('搜索')}`;
-  router.push({ name: 'list', query: { url, name: key } });
+  // 中文搜索: 后端翻译成日文双路合并 + 标签页嗅探
+  router.push({ name: 'list', query: { url: `search:${encodeURIComponent(key)}`, name: key } });
   searchOpen.value = false;
   searchText.value = '';
 }

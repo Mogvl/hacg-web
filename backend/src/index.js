@@ -14,7 +14,7 @@ import { httpGetAwait, httpPostAwait } from './http.js';
 import { parseArticleList, parseArticleDetail } from './article.js';
 import { loadComments, voteComment, postComment } from './comment.js';
 import { proxyFetch, proxyImage } from './proxy.js';
-import { translateBatch } from './translate.js';
+import { translateBatch, tagCandidatesFor, translateToJapanese } from './translate.js';
 
 const PORT = process.env.BACKEND_PORT || 8201;
 const app = express();
@@ -113,9 +113,62 @@ function normalizeUrl(url) {
   return url.startsWith('/') ? `${web()}${url}` : url;
 }
 
+// 标签页嗅探: 候选词命中真实标签则返回该标签的文章(第一页)
+async function searchTagPage(session, tag) {
+  const url = `${wordpress()}/tag/${encodeURIComponent(tag)}`;
+  const p = await httpGetAwait(session, url, { wordpressBase: wordpress() });
+  if (!p) return { articles: [], next: null };
+  const parsed = parseArticleList(p.html, p.url);
+  return parsed;
+}
+
+// 中文搜索: 翻译成日文后多路合并 —
+//   WP 搜索(译文+原文) ∪ 标签页嗅探(原文/译文/词典反查), 按文章 id 去重
+async function searchArticles(session, q) {
+  const jp = await translateToJapanese(q);
+  const searchUrl = (kw) =>
+    `${wordpress()}/?s=${encodeURIComponent(kw)}&submit=${encodeURIComponent('搜索')}`;
+  const sources = [];
+  const seenKw = new Set();
+  for (const kw of [jp, q]) {
+    if (kw && !seenKw.has(kw)) {
+      seenKw.add(kw);
+      sources.push(httpGetAwait(session, searchUrl(kw), { wordpressBase: wordpress() }).then(
+        (p) => (p ? parseArticleList(p.html, p.url) : { articles: [], next: null })
+      ));
+      // 标签页嗅探(含词典反查的日文标签)
+      for (const cand of tagCandidatesFor(kw)) {
+        if (seenKw.has(`tag:${cand}`)) continue;
+        seenKw.add(`tag:${cand}`);
+        sources.push(searchTagPage(session, cand));
+      }
+    }
+  }
+  const pages = await Promise.all(sources);
+  const seen = new Set();
+  const articles = [];
+  for (const pg of pages) {
+    for (const a of pg.articles) {
+      const k = a.id || a.link;
+      if (k && !seen.has(k)) {
+        seen.add(k);
+        articles.push(a);
+      }
+    }
+  }
+  return { title: q, articles, next: pages[0]?.next || null };
+}
+
 // ArticlePagingSource.load — list page (category / tag / author / search)
 app.get('/api/articles', wrap(async (req, res) => {
-  const url = normalizeUrl(req.query.url);
+  const raw = String(req.query.url || '');
+  if (raw.startsWith('search:')) {
+    const q = decodeURIComponent(raw.slice(7));
+    if (!q) return res.status(400).json({ error: '缺少搜索词' });
+    const r = await searchArticles(req.session, q);
+    return res.json(r);
+  }
+  const url = normalizeUrl(raw);
   if (!url) return res.status(400).json({ error: '缺少 url' });
   const page = await httpGetAwait(req.session, url, { wordpressBase: wordpress() });
   if (!page) return res.status(502).json({ error: '请求失败' });
