@@ -114,12 +114,14 @@ function openTag(t: TagLike, e: Event) {
         class="chip chip-cat"
         @click.stop="openTag(article.category, $event)"
       >发表在 {{ article.category.name }}</span>
-      <span
-        v-for="(t, i) in article.tags"
-        :key="i"
-        class="chip"
-        @click.stop="openTag({ name: tagName(t), url: t.url }, $event)"
-      >标签为 {{ tagName(t) }}</span>
+      <!-- 与原站一致: "标签为 a、b、c" 顿号分隔 -->
+      <span v-if="article.tags.length" class="tag-line" @click.stop>
+        <span class="tag-pre">标签为</span>
+        <template v-for="(t, i) in article.tags" :key="i">
+          <a class="tag-link" @click.stop="openTag({ name: tagName(t), url: t.url }, $event)">{{ tagName(t) }}</a
+          ><span v-if="i < article.tags.length - 1">、</span>
+        </template>
+      </span>
     </div>
   </div>
 </template>

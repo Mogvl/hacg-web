@@ -9,7 +9,11 @@ const route = useRoute();
 const router = useRouter();
 
 const url = computed(() => String(route.query.url || ''));
-const name = computed(() => String(route.query.name || '搜索'));
+const rawName = computed(() => String(route.query.name || '搜索'));
+// 原站标签页标题: "标签归档：<标签名>"
+const name = computed(() =>
+  url.value.includes('/wp/tag/') ? `标签归档：${rawName.value}` : rawName.value
+);
 
 function back() {
   if (window.history.length > 1) router.back();
