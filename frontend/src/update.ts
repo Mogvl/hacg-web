@@ -30,9 +30,12 @@ function compareVersion(a: string, b: string): number {
 }
 
 let checking = false;
+let checkedOnce = false; // the app only checks on process start
 
 export async function checkForUpdate(withToast: boolean): Promise<void> {
   if (checking) return;
+  if (!withToast && checkedOnce) return;
+  checkedOnce = true;
   checking = true;
   try {
     const res = await fetch('https://api.github.com/repos/yueeng/hacg/releases/latest');
