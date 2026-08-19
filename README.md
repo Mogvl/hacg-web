@@ -20,6 +20,27 @@ npm run dev -w frontend
 
 生产构建：`npm run build`（产物在 `frontend/dist`），`npm run preview` 在 8200 端口以静态方式预览（`/api` 仍代理到 8201）。后端可用 `BACKEND_PORT` 环境变量覆盖端口。
 
+## 一键部署（Docker Compose）
+
+镜像由 GitHub Actions 在每次推送 `main` 时自动构建并推送到 GHCR，只需要 Docker 环境即可部署：
+
+```bash
+# 1. 拉取部署文件
+git clone https://github.com/Mogvl/hacg-web.git
+cd hacg-web
+
+# 2. 一键启动（前端 8200 / 后端 8201，容器网络内互通）
+docker compose up -d
+```
+
+浏览器访问 <http://<主机IP>:8200>。
+
+- 前端镜像 `ghcr.io/mogvl/hacg-web/hacg-web-frontend:latest`（nginx 静态服务，`/api` 反向代理到后端）
+- 后端镜像 `ghcr.io/mogvl/hacg-web/hacg-web-server:latest`（数据目录 `/data`，映射为 named volume `hacg-data`；NAS 等场景可在 compose 中改成绑定挂载，如 `/volume1/docker/hacg:/data`）
+- 更新：`docker compose pull && docker compose up -d`
+
+`docker-compose.yml` 完整内容见仓库根目录。
+
 ## 功能对照（与原版 yueeng/hacg 逐项对齐）
 
 | 原版功能 | Web 实现 |
